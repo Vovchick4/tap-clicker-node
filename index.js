@@ -1,13 +1,14 @@
-const { Telegraf } = require('telegraf');
+const TelegramBot = require('node-telegram-bot-api');
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
-bot.start((ctx) =>
-    ctx.reply('Welcome', {
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const text = msg.text;
+
+    await bot.sendMessage(chatId, 'Farm our tokens', {
         reply_markup: {
-            keyboard: [[{ text: 'web app', web_app: { url: 'https://tap-clicekr.netlify.app' } }]],
+            inline_keyboard: [[{ text: 'web app', web_app: { url: 'https://tap-clicekr.netlify.app' } }]],
         },
-    }),
-);
-
-bot.launch();
+    })
+});
