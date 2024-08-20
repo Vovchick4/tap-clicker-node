@@ -24,7 +24,7 @@ bot.onText(/\/start (.+)/, async (msg, match) => {
     try {
         const referralId = match[1]; // Extract the referral ID from the command
         const telegramId = msg.from.id;
-        const nickname = msg.from.username ?? '';
+        const nickname = msg.from?.username ?? '';
 
         if (referralId) {
             if (Number(referralId) === Number(telegramId)) {
@@ -71,10 +71,11 @@ bot.onText(/\/getlink/, async (msg) => {
     try {
         const chatId = msg.chat.id;
         const telegramId = msg.from.id;
+        const nickname = msg.from?.username ?? '';
 
         const { data: clientWhoReffered } = await supabaseClient.from('client').select('*, game ( * )').filter('telegram_id', 'eq', Number(telegramId)).single();
         if (!clientWhoReffered) {
-            const { data: createdClient } = await supabaseClient.from('client').insert({ nickname: null, telegram_id: Number(telegramId) }).select('*').single();
+            const { data: createdClient } = await supabaseClient.from('client').insert({ nickname, telegram_id: Number(telegramId) }).select('*').single();
             const { data: gameInsertData } = await gameInsert({
                 client_id: createdClient.id,
             });
