@@ -20,20 +20,21 @@ bot.on('message', async (msg) => {
 
 // Handle the /start command
 bot.onText(/\/start (.+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
     try {
-        const chatId = msg.chat.id;
         const referralId = match[1]; // Extract the referral ID from the command
         const telegramId = msg.from.id;
+        const nickname = msg.from.username ?? '';
 
         if (referralId) {
             if (Number(referralId) === Number(telegramId)) {
                 return bot.sendMessage(chatId, 'Cannot be referral yourself');
             }
 
-            const { data: clientWhoReffered } = await supabaseClient.from('client').select('*, game ( * )').filter('telegram_id', 'eq', Number(telegramId)).limit(1);
+            const { data: clientWhoReffered } = await supabaseClient.from('client').select('*, game ( * )').filter('telegram_id', 'eq', Number(telegramId)).single();
 
             if (!clientWhoReffered) {
-                const { data: createdClient } = await supabaseClient.from('client').insert({ nickname: null, telegram_id: Number(telegramId) });
+                const { data: createdClient } = await supabaseClient.from('client').insert({ nickname, telegram_id: Number(telegramId) }).select("*").single();
                 const { data: gameInsertData } = await gameInsert({
                     client_id: createdClient.id,
                 });
@@ -44,7 +45,7 @@ bot.onText(/\/start (.+)/, async (msg, match) => {
                 return bot.sendMessage(chatId, 'This referral already exists');
             }
 
-            const { data: ownerClient } = await supabaseClient.from('client').select('*, game ( * )').filter('telegram_id', 'eq', Number(telegramId)).limit(1);
+            const { data: ownerClient } = await supabaseClient.from('client').select('*, game ( * )').filter('telegram_id', 'eq', Number(referralId)).single();
             if (ownerClient) {
                 const { error } = await supabaseClient.from('ref').insert({ owner_id: Number(referralId), client_id: Number(telegramId), game_id: ownerClient.game.id }).select('*').single();
 
@@ -53,6 +54,8 @@ bot.onText(/\/start (.+)/, async (msg, match) => {
                 }
 
                 bot.sendMessage(chatId, 'Welcome! You were referred by user ID: ' + referralId);
+            } else {
+                bot.sendMessage(chatId, 'Not found by referral ID: ' + referralId);
             }
         } else {
             bot.sendMessage(chatId, 'Welcome back!');
@@ -69,9 +72,9 @@ bot.onText(/\/getlink/, async (msg) => {
         const chatId = msg.chat.id;
         const telegramId = msg.from.id;
 
-        const { data: clientWhoReffered } = await supabaseClient.from('client').select('*, game ( * )').filter('telegram_id', 'eq', Number(telegramId)).limit(1);
+        const { data: clientWhoReffered } = await supabaseClient.from('client').select('*, game ( * )').filter('telegram_id', 'eq', Number(telegramId)).single();
         if (!clientWhoReffered) {
-            const { data: createdClient } = await supabaseClient.from('client').insert({ nickname: null, telegram_id: Number(telegramId) });
+            const { data: createdClient } = await supabaseClient.from('client').insert({ nickname: null, telegram_id: Number(telegramId) }).select('*').single();
             const { data: gameInsertData } = await gameInsert({
                 client_id: createdClient.id,
             });
